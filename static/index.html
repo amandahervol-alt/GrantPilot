@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GrantPilot</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+<header>
+  <h1>Grant<span>Pilot</span></h1>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-tab="org">Your Organization</button>
+  <button class="tab-btn" data-tab="docs">Upload Documents</button>
+  <button class="tab-btn" data-tab="match">Match to Funder</button>
+  <button class="tab-btn" data-tab="narrative">Generate Narrative</button>
+</nav>
+
+<main>
+
+  <!-- ── Tab 1: Your Organization ── -->
+  <div id="tab-org" class="tab-panel active">
+    <div class="section-header">
+      <h2>Your Organization</h2>
+      <p>Enter your organization's core information. This data is saved and used for all funder matching.</p>
+    </div>
+
+    <div id="org-status" class="status-bar"></div>
+
+    <div class="card">
+      <h3>Mission & Overview</h3>
+      <div class="form-group">
+        <label>Mission Statement</label>
+        <textarea id="mission" rows="3" placeholder="Your organization's mission in your own words..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Geographic Reach</label>
+        <input type="text" id="geographic_reach" placeholder="e.g., Southeast Chicago, rural Illinois, statewide" />
+      </div>
+      <div class="form-group">
+        <label>Organizational History & Milestones</label>
+        <textarea id="history" rows="3" placeholder="When founded, key milestones, growth, notable achievements..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Leadership Capacity</label>
+        <textarea id="leadership" rows="2" placeholder="Key staff, credentials, board composition, years of experience..."></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Programs</h3>
+      <div id="program-list"></div>
+      <button class="btn btn-secondary btn-sm" onclick="openProgramModal()">+ Add Program</button>
+    </div>
+
+    <div class="card">
+      <h3>Impact Statistics & Metrics</h3>
+      <p style="font-size:13px;color:var(--gray-600);margin-bottom:14px;">Add numbers that tell your story — people served, outcomes achieved, years of operation, etc.</p>
+      <div id="stats-list"></div>
+      <button class="btn btn-secondary btn-sm" onclick="addStatRow()">+ Add Statistic</button>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveOrgData()">Save Organization Data</button>
+    </div>
+  </div>
+
+  <!-- ── Tab 2: Upload Documents ── -->
+  <div id="tab-docs" class="tab-panel">
+    <div class="section-header">
+      <h2>Upload Documents</h2>
+      <p>Upload past reports, proposals, program descriptions, or spreadsheets. GrantPilot will extract and index the content for use in matching and narrative generation.</p>
+    </div>
+
+    <div id="doc-status" class="status-bar"></div>
+
+    <div class="card">
+      <div class="upload-zone" id="upload-zone">
+        <div class="upload-icon">📄</div>
+        <p><strong>Click to upload</strong> or drag and drop</p>
+        <p style="margin-top:4px;font-size:13px;">PDF, DOCX, or TXT — up to one file at a time</p>
+      </div>
+      <input type="file" id="file-input" accept=".pdf,.docx,.txt" />
+    </div>
+
+    <div class="card">
+      <h3>Indexed Documents</h3>
+      <div id="doc-list">
+        <p style="color:var(--gray-400);font-size:14px;">No documents uploaded yet.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tab 3: Match to Funder ── -->
+  <div id="tab-match" class="tab-panel">
+    <div class="section-header">
+      <h2>Match to Funder</h2>
+      <p>Enter a funder's priority areas and GrantPilot will identify which parts of your organization's data are most relevant.</p>
+    </div>
+
+    <div id="match-status" class="status-bar"></div>
+
+    <div class="card">
+      <div class="form-group">
+        <label>Funder Priority Areas</label>
+        <textarea id="funder-priorities" rows="4"
+          placeholder="Describe what this funder cares about. For example:&#10;&#10;&quot;Workforce development and job training for returning citizens in rural communities, with emphasis on long-term employment retention and family economic stability.&quot;"></textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="match-btn" onclick="runMatch()">Find Relevant Content</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Matched Content</h3>
+      <div id="match-output" class="ai-output empty">Your matched content will appear here after you click "Find Relevant Content."</div>
+      <div class="copy-row">
+        <button class="btn btn-secondary btn-sm" onclick="copyOutput('match-output')" style="display:none" id="copy-match-btn">Copy</button>
+      </div>
+      <div style="margin-top:14px;display:none" id="use-for-narrative-row">
+        <button class="btn btn-secondary btn-sm" onclick="sendToNarrative()">Use this content → Generate Narrative</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tab 4: Generate Narrative ── -->
+  <div id="tab-narrative" class="tab-panel">
+    <div class="section-header">
+      <h2>Generate Narrative</h2>
+      <p>Generate a grant narrative section grounded in your organizational data.</p>
+    </div>
+
+    <div id="narrative-status" class="status-bar"></div>
+
+    <div class="card">
+      <div class="form-group">
+        <label>Matched Content (source material for the narrative)</label>
+        <textarea id="narrative-source" rows="8"
+          placeholder="Paste the matched content from the 'Match to Funder' tab here, or use the 'Use this content' button there to auto-fill."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Funder Context / Priorities</label>
+        <textarea id="narrative-funder" rows="3"
+          placeholder="Paste or re-enter the funder's priority areas..."></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Section Type</label>
+          <select id="section-type">
+            <option>Organization Background</option>
+            <option>Statement of Need</option>
+            <option>Program Description</option>
+            <option>Goals and Objectives</option>
+            <option>Evaluation Plan</option>
+            <option>Organizational Capacity</option>
+            <option>Executive Summary</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Approximate Word Count</label>
+          <input type="number" id="word-count" value="300" min="100" max="1000" step="50" />
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="narrative-btn" onclick="runNarrative()">Generate Draft</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Draft Narrative</h3>
+      <div id="narrative-output" class="ai-output empty">Your narrative draft will appear here.</div>
+      <div class="copy-row" id="copy-narrative-row" style="display:none">
+        <button class="btn btn-secondary btn-sm" onclick="copyOutput('narrative-output')">Copy Draft</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ── Program Modal ── -->
+<div class="modal-backdrop" id="program-modal">
+  <div class="modal">
+    <h3 id="modal-title">Add Program</h3>
+    <input type="hidden" id="modal-program-id" value="" />
+    <div class="form-group">
+      <label>Program Name</label>
+      <input type="text" id="modal-name" placeholder="e.g., Youth Workforce Training" />
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea id="modal-description" rows="3" placeholder="What does this program do?"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Outcomes & Results</label>
+      <textarea id="modal-outcomes" rows="2" placeholder="Key outcomes, graduation rates, employment rates, etc."></textarea>
+    </div>
+    <div class="form-group">
+      <label>Population Served</label>
+      <input type="text" id="modal-population" placeholder="e.g., Youth ages 16–24, formerly incarcerated adults" />
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveProgram()">Save Program</button>
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
