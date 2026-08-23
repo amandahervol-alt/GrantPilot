@@ -1,24 +1,22 @@
-# Environment — never commit your API key
+# Secrets and Environment Variables
 .env
 
-# Database — contains user data, not source code
-data/*.db
-data/*.db-shm
-data/*.db-wal
-
-# Python
+# Python Caches & Virtual Envs
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-*.egg-info/
-dist/
-build/
-.venv/
+*.py[cod]
+*$py.class
 venv/
+.venv/
 env/
 
-# OS
+# GrantPilot Intermediates (Per AGENTS.md)
+.tmp/
+
+# Local Scratch Test Files
+scratch/
+
+# IDE and OS files
 .DS_Store
 Thumbs.db
+.vscode/
+.idea/

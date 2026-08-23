@@ -1,44 +1,42 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 
-
-class OrgProfile(BaseModel):
+class OrgDataRequest(BaseModel):
     mission: str = ""
-    geographic_reach: str = ""
-    history: str = ""
-    leadership: str = ""
-
-
-class Program(BaseModel):
-    name: str
-    description: str = ""
+    programs: str = ""
     outcomes: str = ""
-    population: str = ""
-
-
-class ProgramUpdate(BaseModel):
-    name: str
-    description: str = ""
-    outcomes: str = ""
-    population: str = ""
-
-
-class Stat(BaseModel):
-    label: str
-    value: str
-
-
-class SaveMemoryRequest(BaseModel):
-    profile: OrgProfile
-    stats: List[Stat] = []
-
+    stats: str = ""
 
 class FunderMatchRequest(BaseModel):
     funder_priorities: str
 
+class MatchedContent(BaseModel):
+    content: str
+    explanation: str
+    rank: int
+
+class FunderMatchResponse(BaseModel):
+    matches: List[MatchedContent]
 
 class NarrativeRequest(BaseModel):
-    matched_content: str
-    funder_context: str
-    section_type: str = "Organization Background"
-    word_count: int = 300
+    section_type: str = "Statement of Need"
+    target_word_count: int = Field(default=400, ge=50, le=2000)
+    funder_context: Optional[str] = ""
+    matched_points: Optional[List[str]] = []
+
+class NarrativeResponse(BaseModel):
+    section_type: str
+    target_word_count: int
+    actual_word_count: int
+    draft: str
+    gaps: List[str] = []
+
+class DocumentItem(BaseModel):
+    id: str
+    filename: str
+    uploaded_at: str
+    word_count: int
+    char_count: int
+
+class DocumentListResponse(BaseModel):
+    documents: List[DocumentItem]

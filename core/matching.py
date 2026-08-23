@@ -1,105 +1,59 @@
+from anthropic import Anthropic, APIError, AuthenticationError
 import os
-import anthropic
-from .memory import get_all_memory
-from .documents import get_all_document_text
+from dotenv import load_dotenv
+from core.documents import get_combined_document_text
 
-MODEL = "claude-sonnet-4-5"
+load_dotenv()
 
-_client = None
+def call_anthropic_matching(org_data: dict, funder_priorities: str) -> str:
+    """Calls the Anthropic API to match org data and indexed documents with funder priorities."""
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key or api_key.strip() == "your_anthropic_api_key_here":
+        raise ValueError("ANTHROPIC_API_KEY is missing or invalid in your .env file. Please set a valid Anthropic API key.")
 
+    model_name = os.getenv("ANTHROPIC_MODEL", "claude-3-7-sonnet-20250219")
+    client = Anthropic(api_key=api_key)
 
-def _get_client() -> anthropic.Anthropic:
-    global _client
-    if _client is None:
-        _client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-    return _client
+    # Build context from org memory
+    org_context = "Organizational Data:\n"
+    for key, value in org_data.items():
+        if value and str(value).strip():
+            org_context += f"--- {key.upper()} ---\n{value}\n\n"
 
+    # Add indexed documents if available
+    doc_context = get_combined_document_text(max_chars=12000)
+    if doc_context:
+        org_context += f"\n--- SUPPORTING UPLOADED DOCUMENTS ---\n{doc_context}\n"
 
-def _build_org_context(memory: dict, documents: list) -> str:
-    lines = []
-    profile = memory.get("profile", {})
-
-    if profile.get("mission"):
-        lines.append(f"MISSION:\n{profile['mission']}")
-    if profile.get("geographic_reach"):
-        lines.append(f"GEOGRAPHIC REACH:\n{profile['geographic_reach']}")
-    if profile.get("history"):
-        lines.append(f"ORGANIZATIONAL HISTORY:\n{profile['history']}")
-    if profile.get("leadership"):
-        lines.append(f"LEADERSHIP CAPACITY:\n{profile['leadership']}")
-
-    programs = memory.get("programs", [])
-    if programs:
-        lines.append("PROGRAMS:")
-        for p in programs:
-            block = [f"  Program: {p['name']}"]
-            if p.get("description"):
-                block.append(f"  Description: {p['description']}")
-            if p.get("outcomes"):
-                block.append(f"  Outcomes: {p['outcomes']}")
-            if p.get("population"):
-                block.append(f"  Population served: {p['population']}")
-            lines.append("\n".join(block))
-
-    stats = memory.get("stats", [])
-    if stats:
-        lines.append("IMPACT STATISTICS:")
-        for s in stats:
-            lines.append(f"  - {s['label']}: {s['value']}")
-
-    if documents:
-        lines.append("UPLOADED DOCUMENTS:")
-        for doc in documents:
-            # Cap each document at 4000 chars to stay within context limits
-            text = doc["content"]
-            truncated = text[:4000] + "\n...[truncated]" if len(text) > 4000 else text
-            lines.append(f"\n[Document: {doc['filename']}]\n{truncated}")
-
-    return "\n\n".join(lines)
-
-
-def match_to_funder(funder_priorities: str) -> dict:
-    memory = get_all_memory()
-    documents = get_all_document_text()
-    org_context = _build_org_context(memory, documents)
-
-    if not org_context.strip():
-        return {
-            "error": "No organizational data found. Please add your organization's "
-                     "information in the 'Your Organization' tab first."
-        }
-
-    prompt = f"""You are GrantPilot, an expert grant writing assistant.
-
-ORGANIZATION DATA:
-{org_context}
-
-FUNDER PRIORITY AREAS:
-{funder_priorities}
-
-Your task:
-1. Review the organization's data carefully.
-2. Identify the 3–7 most relevant pieces of content (programs, stats, outcomes, history, leadership) that align with the funder's priorities.
-3. Rank them from most to least relevant.
-4. For each match, explain in 1–2 sentences exactly why it connects to this funder's priorities.
-5. Only include content that is genuinely present in the organization data — do not invent or embellish.
-
-Format each match as:
-**[Rank]. [Content title]**
-Content: [the specific data, stat, or program description]
-Why it's relevant: [your explanation]
-
-End with a brief **Gaps to Address** section listing any funder priorities that don't have strong matching content in the org data."""
-
-    response = _get_client().messages.create(
-        model=MODEL,
-        max_tokens=2000,
-        system=(
-            "You are GrantPilot, a grant writing assistant. Help nonprofits identify "
-            "which parts of their organizational data are most relevant to a specific "
-            "funder's priorities. Be precise and grounded only in the data provided."
-        ),
-        messages=[{"role": "user", "content": prompt}],
+    system_prompt = (
+        "You are GrantPilot, an AI grant writing assistant for nonprofits. "
+        "Your task is to analyze the provided organizational data and supporting documents against the funder's priority areas.\n"
+        "1. Identify key overlaps and relevant content.\n"
+        "2. Provide a ranked list of relevant content points.\n"
+        "3. Provide a clear explanation for why each piece fits the funder's stated priorities.\n"
+        "IMPORTANT: Work ONLY from the provided org data and documents. Do not hallucinate or invent metrics, programs, or outcomes. "
+        "If gaps exist or no relevant data is found for a priority, explicitly flag it.\n"
+        "Respond ONLY with a valid JSON object following this schema:\n"
+        '{"matches": [{"content": "string", "explanation": "string", "rank": number}]}'
     )
 
-    return {"matches": response.content[0].text}
+    user_prompt = (
+        f"{org_context}\n"
+        f"Funder Priority Areas:\n{funder_priorities}"
+    )
+
+    try:
+        response = client.messages.create(
+            model=model_name,
+            max_tokens=2048,
+            temperature=0.2,
+            system=system_prompt,
+            messages=[{"role": "user", "content": user_prompt}]
+        )
+        return response.content[0].text
+    except AuthenticationError:
+        raise ValueError("Anthropic Authentication failed: Your ANTHROPIC_API_KEY is invalid or expired.")
+    except APIError as e:
+        raise ValueError(f"Anthropic API error: {e.message}")
+    except Exception as e:
+        raise ValueError(f"Error communicating with AI service: {str(e)}")

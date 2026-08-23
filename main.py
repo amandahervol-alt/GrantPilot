@@ -1,28 +1,24 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from pathlib import Path
+from api.routes import router as api_router
 from dotenv import load_dotenv
 
+# Load environment variables from .env
 load_dotenv()
 
-from api.routes import router
-from core.memory import init_db
-from core.documents import init_documents_db
+app = FastAPI(title="GrantPilot", description="AI-powered grant narrative assistant")
 
-app = FastAPI(title="GrantPilot")
+# Mount API routes
+app.include_router(api_router, prefix="/api")
 
-init_db()
-init_documents_db()
-
-app.include_router(router, prefix="/api")
-app.mount("/static", StaticFiles(directory=str(Path(__file__).parent / "static")), name="static")
-
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
-def root():
-    return FileResponse(str(Path(__file__).parent / "static" / "index.html"))
-
+async def root():
+    """Serve the main frontend application."""
+    return FileResponse("static/index.html")
 
 if __name__ == "__main__":
     import uvicorn
