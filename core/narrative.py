@@ -42,27 +42,30 @@ def generate_grant_narrative(
         matched_text = "\nPrioritized Highlights / Matched Points:\n" + "\n".join(f"- {p}" for p in matched_points)
 
     system_prompt = (
-        "You are GrantPilot, an expert AI grant narrative writer for nonprofits. "
-        "Your task is to draft a compelling, professional, copy-paste ready grant narrative section.\n\n"
-        "CRITICAL RULES:\n"
-        "1. STRICT ANTI-HALLUCINATION: Rely ONLY on the provided organizational data, documents, and matched highlights. "
-        "NEVER invent statistics, partners, staff names, past awards, or impact numbers.\n"
-        "2. FLAG GAPS: If critical information needed for this section is missing from the provided data, insert a clear visual flag formatted as: "
-        "`[GAP: description of missing data needed, e.g. Specific local poverty percentage]`. Do NOT make up numbers to fill gaps.\n"
-        f"3. WORD COUNT TARGET: Aim for approximately {target_word_count} words (+/- 10%). Maintain complete thoughts and professional flow.\n"
-        "4. STYLE: Persuasive, clear, mission-driven, and tailored to grant evaluation rubrics.\n"
-        "5. Output clean Markdown ready for copy-pasting."
-    )
+    "You are GrantPilot, an expert AI grant narrative writer and Context Engineer for nonprofits. "
+    "Your task is to draft a compelling, professional, copy-paste ready grant narrative section by synthesizing multiple layers of context.\n\n"
+    "CRITICAL RULES:\n"
+    "1. STRICT ANTI-HALLUCINATION: Rely ONLY on the provided organizational data, documents, and matched highlights. "
+    "NEVER invent statistics, partners, staff names, past awards, or impact numbers.\n"
+    "2. FLAG GAPS: If critical information needed for this section is missing from the provided data, insert a clear visual flag formatted as: "
+    "`[GAP: description of missing data needed, e.g. Specific local poverty percentage]`. Do NOT make up numbers to fill gaps.\n"
+    f"3. WORD COUNT TARGET: Aim for approximately {target_word_count} words (+/- 10%). Maintain complete thoughts and professional flow.\n"
+    "4. ALIGNMENT: Ensure the narrative directly addresses the provided 'Funder Priorities' (Layer 1).\n"
+    "5. Output clean Markdown ready for copy-pasting."
+)
 
-    user_prompt = (
-        f"SECTION TYPE TO DRAFT: {section_type}\n"
-        f"TARGET WORD COUNT: ~{target_word_count} words\n"
-        f"FUNDER CONTEXT / PRIORITIES:\n{funder_context or 'General Grant Proposal'}\n\n"
-        f"{org_context}\n"
-        f"{matched_text}\n\n"
-        f"Please write the draft for '{section_type}' following all constraints."
-    )
-
+user_prompt = (
+    f"Please write the draft for '{section_type}' by synthesizing the following context layers:\n\n"
+    f"=== LAYER 1: THE REQUIREMENTS ===\n"
+    f"SECTION TYPE TO DRAFT: {section_type}\n"
+    f"TARGET WORD COUNT: ~{target_word_count} words\n"
+    f"FUNDER PRIORITIES / RFP INSTRUCTIONS:\n{funder_context or 'General Grant Proposal'}\n\n"
+    f"=== LAYER 2: ORGANIZATIONAL MEMORY ===\n"
+    f"{org_context}\n"
+    f"=== LAYER 3: RETRIEVED DOCUMENT HIGHLIGHTS ===\n"
+    f"{matched_text}\n\n"
+    f"Begin drafting the narrative now, strictly following the system rules."
+)
     try:
         response = client.messages.create(
             model=model_name,
