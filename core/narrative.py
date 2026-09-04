@@ -22,7 +22,7 @@ def generate_grant_narrative(
     if not api_key or api_key.strip() == "your_anthropic_api_key_here":
         raise ValueError("ANTHROPIC_API_KEY is missing or invalid in your .env file. Please set a valid Anthropic API key.")
 
-    model_name = os.getenv("ANTHROPIC_MODEL", "claude-3-7-sonnet-20250219")
+    model_name = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-5")
     client = Anthropic(api_key=api_key)
 
     # 1. Retrieve Org Context
