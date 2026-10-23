@@ -79,6 +79,10 @@ async def upload_document_endpoint(file: UploadFile = File(...)):
                 "word_count": doc_record["word_count"]
             }
         }
+    except HTTPException:
+        # Preserve intentional HTTP error responses (e.g. empty-file 400)
+        # instead of letting the generic handler below convert them to 500s.
+        raise
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
@@ -93,6 +97,9 @@ async def delete_document_endpoint(doc_id: str):
             return {"status": "success", "message": "Document removed from index."}
         else:
             raise HTTPException(status_code=404, detail="Document not found.")
+    except HTTPException:
+        # Preserve the intentional 404 instead of converting it to a 500.
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

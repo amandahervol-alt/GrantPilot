@@ -6,8 +6,11 @@ on:
   pull_request:
 
 jobs:
-  smoke:
+  test:
     runs-on: ubuntu-latest
+    env:
+      # Tests never call the live API; the app requires a key at import.
+      ANTHROPIC_API_KEY: dummy
     steps:
       - uses: actions/checkout@v4
 
@@ -21,5 +24,5 @@ jobs:
       - name: Compile all sources
         run: python -m compileall -q .
 
-      - name: App import smoke test
-        run: python -c "import main; print('app imports OK')"
+      - name: Run tests
+        run: python -m pytest -v
