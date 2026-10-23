@@ -46,7 +46,6 @@ def call_anthropic_matching(org_data: dict, funder_priorities: str) -> str:
         response = client.messages.create(
             model=model_name,
             max_tokens=2048,
-            temperature=0.2,
             system=system_prompt,
             messages=[{"role": "user", "content": user_prompt}]
         )

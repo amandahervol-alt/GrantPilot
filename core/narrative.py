@@ -70,7 +70,6 @@ def generate_grant_narrative(
         response = client.messages.create(
             model=model_name,
             max_tokens=3000,
-            temperature=0.3,
             system=system_prompt,
             messages=[{"role": "user", "content": user_prompt}]
         )
