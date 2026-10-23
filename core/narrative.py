@@ -54,18 +54,18 @@ def generate_grant_narrative(
     "5. Output clean Markdown ready for copy-pasting."
 )
 
-user_prompt = (
-    f"Please write the draft for '{section_type}' by synthesizing the following context layers:\n\n"
-    f"=== LAYER 1: THE REQUIREMENTS ===\n"
-    f"SECTION TYPE TO DRAFT: {section_type}\n"
-    f"TARGET WORD COUNT: ~{target_word_count} words\n"
-    f"FUNDER PRIORITIES / RFP INSTRUCTIONS:\n{funder_context or 'General Grant Proposal'}\n\n"
-    f"=== LAYER 2: ORGANIZATIONAL MEMORY ===\n"
-    f"{org_context}\n"
-    f"=== LAYER 3: RETRIEVED DOCUMENT HIGHLIGHTS ===\n"
-    f"{matched_text}\n\n"
-    f"Begin drafting the narrative now, strictly following the system rules."
-)
+    user_prompt = (
+        f"Please write the draft for '{section_type}' by synthesizing the following context layers:\n\n"
+        f"=== LAYER 1: THE REQUIREMENTS ===\n"
+        f"SECTION TYPE TO DRAFT: {section_type}\n"
+        f"TARGET WORD COUNT: ~{target_word_count} words\n"
+        f"FUNDER PRIORITIES / RFP INSTRUCTIONS:\n{funder_context or 'General Grant Proposal'}\n\n"
+        f"=== LAYER 2: ORGANIZATIONAL MEMORY ===\n"
+        f"{org_context}\n"
+        f"=== LAYER 3: RETRIEVED DOCUMENT HIGHLIGHTS ===\n"
+        f"{matched_text}\n\n"
+        f"Begin drafting the narrative now, strictly following the system rules."
+    )
     try:
         response = client.messages.create(
             model=model_name,
